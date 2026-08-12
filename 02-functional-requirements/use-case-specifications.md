@@ -6,7 +6,7 @@
 | **Версия** | 1.1 |
 | **Статус** | Утверждено |
 | **Автор** | Тюкин Вадим |
-| **Связанные артефакты** | [Use Case Diagram](../03-diagrams/uml/use-case-diagram.puml), [srs.md](./srs.md) |
+| **Связанные артефакты** | [Use Case Diagram](../03-diagrams/uml/use-case-diagram.png), [srs.md](./srs.md) |
 
 
 ---
