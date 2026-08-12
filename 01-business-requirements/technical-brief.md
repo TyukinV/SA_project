@@ -115,8 +115,8 @@
 
 | Этап | Содержание работ | Артефакт |
 | :--- | :--- | :--- |
-| **Этап 1** | Сбор и утверждение бизнес-требований | [01-vision-and-scope.md](./vision-and-scope.md) |
-| **Этап 2** | Детализация функциональных и НФ-требований | [01-srs.md](../02-functional-requirements/srs.md) |
+| **Этап 1** | Сбор и утверждение бизнес-требований | [vision-and-scope.md](./vision-and-scope.md) |
+| **Этап 2** | Детализация функциональных и НФ-требований | [srs.md](../02-functional-requirements/srs.md) |
 | **Этап 3** | Моделирование бизнес-процессов (BPMN) | [BPMN-диаграммы](../03-diagrams/bpmn/) |
 | **Этап 4** | Системное проектирование (UML, ERD, API) | [UML-диаграммы](../03-diagrams/uml/), [ERD](../03-diagrams/erd/), [API-контракты](../04-api-and-integrations/) |
 | **Этап 5** | Трассировка требований (RTM) | [RTM-матрица](../05-traceability/rtm-matrix.md) |
