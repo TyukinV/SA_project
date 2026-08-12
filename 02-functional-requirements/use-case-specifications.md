@@ -218,11 +218,11 @@
 
 | Use Case | BPMN-процесс | UML-диаграммы | API-эндпоинт |
 | :--- | :--- | :--- | :--- |
-| UC-01 | – | [Sequence (поиск)](../03-diagrams/uml/sequence-search.png) | [`GET /search`](../04-api-and-integrations/openapi.yaml) |
+| UC-01 | – | – (см. [Use Case Diagram](#) для контекста) | [`GET /search`](../04-api-and-integrations/openapi.yaml) |
 | UC-02, UC-03 | [`booking-and-payment.svg`](../03-diagrams/bpmn/booking-and-payment.svg) | [Sequence (оплата)](../03-diagrams/uml/sequence-payment-webhook.png) | [`POST /bookings`](../04-api-and-integrations/openapi.yaml), [`POST /bookings/{id}/payment-link`](../04-api-and-integrations/openapi.yaml) |
-| UC-06, UC-07 | [`check-in-and-check-out.svg`](../03-diagrams/bpmn/check-in-and-check-out.svg) | [Sequence (Check-in/out)](../03-diagrams/uml/sequence-check-in-out.png) | – (внутренний админ-интерфейс) |
-| UC-11 | – (отсутствует) | [Use Case Diagram](../03-diagrams/uml/use-case-diagram.puml) | – (внутренний админ-интерфейс) |
-| UC-14, UC-15 | [`booking-and-payment.svg`](../03-diagrams/bpmn/booking-and-payment.svg) | [Sequence (Scheduler)](../03-diagrams/uml/sequence-scheduler.png) | – (системный) |
+| UC-06, UC-07 | [`check-in-and-check-out.svg`](../03-diagrams/bpmn/check-in-and-check-out.svg) | – (внутренний админ-интерфейс) | – |
+| UC-11 | – (отсутствует, см. пробел G-08 в [RTM](../05-traceability/rtm-matrix.md)) | [Use Case Diagram](../03-diagrams/uml/use-case-diagram.png) | – |
+| UC-14, UC-15 | [`booking-and-payment.svg`](../03-diagrams/bpmn/booking-and-payment.svg) | – (системный Scheduler) | – |
 
 ---
 
