@@ -1,0 +1,398 @@
+openapi: 3.0.0
+info:
+  title: Hotel Booking System - Public API для внешних интеграций
+  description: |
+    API для турагенств и партнёров, позволяющее бронировать номера в отеле.
+    Аутентификация по API-ключу (Bearer Token).
+    **Внимание:** Все суммы передаются в **копейках** (целое число).
+  version: 1.1.1
+  contact:
+    name: Support Team
+    email: support@hotel-booking.example.com
+
+servers:
+  - url: https://api.hotel-booking.example.com/v1
+    description: Production server
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  /search:
+    get:
+      summary: Поиск доступных номеров
+      description: Возвращает список номеров, доступных для бронирования на указанные даты с указанием цен.
+      parameters:
+        - name: check_in
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Дата заезда (YYYY-MM-DD)
+        - name: check_out
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Дата выезда (YYYY-MM-DD)
+        - name: guests_count
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 10
+          description: Количество гостей
+        - name: room_type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [STANDARD, DELUXE, SUITE]
+          description: Тип номера (фильтр)
+      responses:
+        '200':
+          description: Успешный ответ с перечнем номеров
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RoomAvailability'
+        '400':
+          description: Некорректный запрос (например, check_in > check_out)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизованный запрос (отсутствует или неверный API-ключ)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /bookings:
+    post:
+      summary: Создать бронирование
+      description: |
+        Создаёт новое бронирование. В ответе возвращается `booking_id` и статус `PENDING`.
+        Бронь блокирует номер на **15 минут** (поле `expires_at` в ответе). По истечении этого срока
+        номер автоматически освобождается, а бронь переходит в статус `EXPIRED`.
+        Для получения ссылки на оплату используйте отдельный эндпоинт `/bookings/{booking_id}/payment-link`.
+        **Идемпотентность:** заголовок `Idempotency-Key` обязателен. При повторном запросе с тем же
+        ключом (например, ретрай после таймаута) API возвращает результат первого успешного создания
+        брони, а не создаёт дубликат.
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Уникальный ключ идемпотентности для данной попытки создания брони (UUID).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookingRequest'
+      responses:
+        '201':
+          description: Бронь создана успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingResponse'
+        '400':
+          description: Некорректные данные (номер недоступен, ошибка валидации)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизованный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Конфликт (номер уже забронирован на эти даты другим запросом)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /bookings/{booking_id}/payment-link:
+    post:
+      summary: Получить ссылку на оплату для брони
+      description: |
+        Генерирует платёжную ссылку для уже созданного бронирования (статус `PENDING`).
+        Возвращает URL для перенаправления клиента на страницу оплаты.
+
+        **Идемпотентность:** если для брони уже существует активная (не истёкшая и не завершённая)
+        платёжная сессия, повторный вызов этого эндпоинта возвращает **ту же** `payment_url`,
+        а не создаёт новую сессию у платёжного шлюза.
+      parameters:
+        - name: booking_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Ссылка на оплату создана (или возвращена существующая активная сессия)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  payment_url:
+                    type: string
+                    example: "https://payment-gateway.example.com/pay/tr_abc123xyz"
+        '400':
+          description: Невозможно создать ссылку (статус брони не PENDING)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизованный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Бронь не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /bookings/{booking_id}:
+    get:
+      summary: Получить информацию о бронировании
+      parameters:
+        - name: booking_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID бронирования
+      responses:
+        '200':
+          description: Данные брони
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingResponse'
+        '401':
+          description: Неавторизованный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Бронь не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Отменить бронирование
+      description: Отменяет бронирование согласно политике отмены (см. раздел 5 «Бизнес-правила» в [srs.md](../02-functional-requirements/srs.md)).
+      parameters:
+        - name: booking_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Бронь успешно отменена
+        '400':
+          description: Невозможно отменить (статус не позволяет или уже выехал)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизованный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Бронь не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  schemas:
+    ErrorResponse:
+      type: object
+      description: Единый формат ошибки для всех эндпоинтов публичного API.
+      required:
+        - error_code
+        - error_message
+      properties:
+        error_code:
+          type: string
+          description: Машиночитаемый код ошибки.
+          example: "ROOM_NOT_AVAILABLE"
+        error_message:
+          type: string
+          description: Человекочитаемое описание ошибки.
+          example: "Номер недоступен на указанные даты."
+        details:
+          type: object
+          description: Дополнительный контекст ошибки (опционально), например невалидные поля.
+          additionalProperties: true
+
+    RoomAvailability:
+      type: object
+      properties:
+        room_id:
+          type: integer
+          example: 101
+        room_number:
+          type: string
+          example: "405"
+        room_type:
+          type: string
+          enum: [STANDARD, DELUXE, SUITE]
+          example: DELUXE
+        capacity:
+          type: integer
+          example: 2
+        base_price_per_night:
+          type: integer
+          description: "Цена за ночь в копейках"
+          example: 500000
+        total_price:
+          type: integer
+          description: "Итоговая стоимость за весь период в копейках"
+          example: 1500000
+        currency:
+          type: string
+          description: "Код валюты (например, RUB)"
+          example: "RUB"
+        available:
+          type: boolean
+          example: true
+
+    CreateBookingRequest:
+      type: object
+      required:
+        - room_id
+        - check_in
+        - check_out
+        - guest_name
+        - guest_email
+        - guest_phone
+      properties:
+        room_id:
+          type: integer
+          description: ID номера из ответа поиска
+          example: 101
+        check_in:
+          type: string
+          format: date
+          example: "2026-08-10"
+        check_out:
+          type: string
+          format: date
+          example: "2026-08-13"
+        guest_name:
+          type: string
+          example: "Иван Петров"
+        guest_email:
+          type: string
+          format: email
+          example: "ivan@example.com"
+        guest_phone:
+          type: string
+          example: "+79991234567"
+        special_requests:
+          type: string
+          description: Дополнительные пожелания
+          example: "Номер с видом на море"
+        guests_count:
+          type: integer
+          minimum: 1
+          example: 2
+        currency:
+          type: string
+          description: "Валюта бронирования (по умолчанию RUB)"
+          default: "RUB"
+          example: "RUB"
+
+    BookingResponse:
+      type: object
+      properties:
+        booking_id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        status:
+          type: string
+          enum: [PENDING, PENDING_APPROVAL, CONFIRMED, CHECKED_IN, CHECKED_OUT, CANCELLED, EXPIRED, REJECTED]
+          example: PENDING
+        room:
+          $ref: '#/components/schemas/RoomAvailability'
+        check_in:
+          type: string
+          format: date
+        check_out:
+          type: string
+          format: date
+        guest_name:
+          type: string
+        guest_email:
+          type: string
+          format: email
+        guest_phone:
+          type: string
+        total_price:
+          type: integer
+          description: "Стоимость в копейках"
+          example: 1500000
+        currency:
+          type: string
+          example: "RUB"
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+          description: "Время, до которого требуется оплата (для PENDING)"
