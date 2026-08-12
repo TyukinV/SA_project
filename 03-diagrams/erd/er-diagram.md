@@ -17,6 +17,7 @@ erDiagram
     BOOKINGS ||--o{ INVENTORY_CALENDAR : "блокирует даты"
     BOOKINGS ||--o{ BOOKING_EVENTS : "имеет историю статусов"
     BOOKINGS ||--o{ PAYMENTS : "оплачивается через"
+    BOOKINGS ||--o{ NOTIFICATIONS : "имеет уведомления"
     USERS ||--o{ BOOKING_EVENTS : "инициирует изменение"
     USERS ||--o{ ROOMS : "обновляет физ. статус"
 
@@ -32,7 +33,8 @@ erDiagram
         bigint id PK
         varchar name "Standard, Deluxe, Suite"
         int capacity "макс. число гостей"
-        bigint base_price "**цена за ночь в копейках (integer)**"
+        bigint base_price "цена за ночь в копейках (integer)"
+        int min_los "минимальная длина проживания (ночей), опционально"
         text description
     }
 
@@ -51,7 +53,7 @@ erDiagram
         bigint room_id FK
         date calendar_date
         boolean is_available "false = занято/заблокировано"
-        bigint price_override "**цена на дату в копейках (integer), опционально**"
+        bigint price_override "цена на дату в копейках (integer), опционально"
         bigint booking_id FK "какая бронь заблокировала дату, nullable"
     }
 
@@ -63,7 +65,7 @@ erDiagram
         date check_out_date
         varchar status "PENDING, PENDING_APPROVAL, CONFIRMED, CHECKED_IN, CHECKED_OUT, CANCELLED, EXPIRED, REJECTED"
         int guests_count
-        bigint total_price "**итоговая сумма в копейках (integer)**"
+        bigint total_price "итоговая сумма в копейках (integer)"
         text special_requests
         timestamp created_at
         timestamp expires_at "created_at + 15 мин, для Scheduler'а"
@@ -82,12 +84,24 @@ erDiagram
     PAYMENTS {
         bigint id PK
         bigint booking_id FK
-        bigint amount "**сумма платежа в копейках (integer)**"
+        bigint amount "сумма платежа в копейках (integer)"
         varchar status "PENDING, COMPLETED, REFUNDED, FAILED"
         varchar payment_method
         varchar gateway_transaction_id UK
         timestamp created_at
         timestamp updated_at
+    }
+
+    NOTIFICATIONS {
+        bigint id PK
+        bigint booking_id FK
+        varchar channel "email, sms, push"
+        varchar subject
+        text body
+        varchar status "SENT, DELIVERED, FAILED"
+        timestamp sent_at
+        timestamp delivered_at
+        text error_message
     }
 
     USERS {
