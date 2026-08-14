@@ -9,7 +9,7 @@
 | **Автор** | Тюкин Вадим |
 | **Целевой продукт** | SaaS-платформа для автоматизации бронирований в отелях малого и среднего бизнеса |
 | **Базовый документ** | [technical-brief.md](../01-business-requirements/technical-brief.md) |
-| **Реестр прецедентов ** | [use-case-specifications.md](../02-functional-requirements/use-case-specifications.md) |
+| **Реестр прецедентов** | [use-case-specifications.md](../02-functional-requirements/use-case-specifications.md) |
 
 *Изменения в версии 2.1: нумерация Use Case в разделах 3 и 3.1 приведена в соответствие с UC_спецификация.md (единый источник ID прецедентов); устранена коллизия таймаутов между UC-14 и UC-11 для статуса `PENDING_APPROVAL`.*
 
