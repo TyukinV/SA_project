@@ -4,7 +4,6 @@
 | :--- | :--- |
 | **ID** | TC-01 |
 | **Название** | Поиск и создание брони |
-| **Приоритет** | 🔴 Critical |
 | **Связанные UC** | [UC-01](../02-functional-requirements/use-case-specifications.md#uc-01-найти-доступные-номера), [UC-02](../02-functional-requirements/use-case-specifications.md#uc-02-забронировать-номер) |
 | **Связанные AC** | AC-02.1, AC-02.2 |
 | **Связанные FR** | FR-01, FR-02 |
